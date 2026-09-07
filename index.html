@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width,
+  initial-scale=1.0,
+  maximum-scale=1.0,
+  user-scalable=no">
+<title>Studio Recorder</title>
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: #08080c;
+  color: white;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "Segoe UI",
+    sans-serif;
+}
+body {
+  display: flex;
+  justify-content: center;
+}
+.app {
+  width: 100%;
+  max-width: 760px;
+  min-height: 100vh;
+  padding: 16px;
+}
+header {
+  text-align: center;
+  padding: 18px 0 20px;
+}
+header h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.5px;
+}
+header p {
+  color: #8d8d96;
+  margin: 7px 0 0;
+  font-size: 14px;
+}
+.card {
+  background: #141419;
+  border: 1px solid #292930;
+  border-radius: 24px;
+  padding: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 18px;
+  overflow: hidden;
+}
+#previewVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.recording-indicator {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,.72);
+  padding: 8px 12px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+.recording-indicator.active {
+  display: flex;
+}
+.red-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff3030;
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: .25;
+  }
+}
+.timer {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  display: none;
+  background: rgba(0,0,0,.72);
+  padding: 8px 12px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(12px);
+}
+.timer.active {
+  display: block;
+}
+.status {
+  min-height: 22px;
+  text-align: center;
+  margin: 14px 0 5px;
+  color: #aaa;
+  font-size: 14px;
+}
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+button {
+  appearance: none;
+  border: 0;
+  color: white;
+  min-height: 54px;
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    transform .1s,
+    opacity .15s,
+    filter .15s;
+}
+button:active {
+  transform: scale(.95);
+}
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.record {
+  background: #e52d3b;
+}
+.stop {
+  background: #34343e;
+}
+.camera {
+  grid-column: 1 / -1;
+  background: #285fe5;
+}
+/* PUSH TO TALK */
+.ptt-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #292930;
+}
+.ptt-title {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 750;
+  margin-bottom: 5px;
+}
+.ptt-description {
+  text-align: center;
+  color: #85858e;
+  font-size: 13px;
+  margin-bottom: 13px;
+}
+.ptt-button {
+  width: 100%;
+  min-height: 72px;
+  background: #25252e;
+  border: 2px solid #3b3b47;
+  border-radius: 20px;
+  font-size: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.ptt-button.active {
+  background: #bd2634;
+  border-color: #ff5360;
+  transform: scale(.98);
+  box-shadow:
+    0 0 0 4px rgba(255,60,75,.12),
+    0 0 35px rgba(255,50,65,.25);
+}
+.ptt-icon {
+  display: inline-block;
+  margin-right: 7px;
+}
+.audio-meter {
+  margin-top: 12px;
+  height: 8px;
+  background: #25252e;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.audio-meter-fill {
+  width: 0%;
+  height: 100%;
+  background: #42e37b;
+  border-radius: inherit;
+  transition: width .08s;
+}
+.permission {
+  margin-top: 14px;
+  background: #1c1c23;
+  border-radius: 15px;
+  padding: 13px;
+  color: #898991;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.recordings {
+  margin-top: 22px;
+}
+.recordings h2 {
+  font-size: 20px;
+  margin: 0 0 11px;
+}
+.empty {
+  text-align: center;
+  color: #73737c;
+  background: #141419;
+  border: 1px solid #292930;
+  border-radius: 18px;
+  padding: 28px 12px;
+}
+.recording-item {
+  background: #141419;
+  border: 1px solid #292930;
+  border-radius: 20px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.recording-item video {
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  border-radius: 13px;
+  background: black;
+}
+.recording-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+.recording-name {
+  font-size: 14px;
+  font-weight: 650;
+}
+.recording-size,
+.recording-time {
+  color: #777780;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.recording-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.download {
+  background: #245ee8;
+}
+.delete {
+  background: #3b2529;
+}
+@media (max-width: 450px) {
+  .app {
+    padding: 11px;
+  }
+  header h1 {
+    font-size: 25px;
+  }
+  button {
+    font-size: 15px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>🎥 Studio Recorder</h1>
+  <p>
+    Record video • replay • push-to-talk
+  </p>
+</header>
+<div class="card">
+  <!-- CAMERA -->
+  <div class="video-container">
+    <video
+      id="previewVideo"
+      autoplay
+      muted
+      playsinline>
+    </video>
+    <div class="overlay">
+      <div
+        id="recordingIndicator"
+        class="recording-indicator">
+        <span class="red-dot"></span>
+        RECORDING
+      </div>
+      <div
+        id="timer"
+        class="timer">
+        00:00
+      </div>
+    </div>
+  </div>
+  <div
+    id="status"
+    class="status">
+    Camera not started
+  </div>
+  <!-- MAIN CONTROLS -->
+  <div class="controls">
+    <button
+      id="recordBtn"
+      class="record">
+      🔴 Record
+    </button>
+    <button
+      id="stopBtn"
+      class="stop"
+      disabled>
+      ⏹ Stop
+    </button>
+    <button
+      id="cameraBtn"
+      class="camera">
+      📷 Start Camera
+    </button>
+  </div>
+  <!-- PUSH TO TALK -->
+  <div class="ptt-section">
+    <div class="ptt-title">
+      🎙️ Push-to-Talk
+    </div>
+    <div class="ptt-description">
+      Hold the button to hear your microphone
+      through your headphones.
+    </div>
+    <button
+      id="pttButton"
+      class="ptt-button">
+      <span class="ptt-icon">🎙️</span>
+      HOLD TO TALK
+    </button>
+    <div class="audio-meter">
+      <div
+        id="meterFill"
+        class="audio-meter-fill">
+      </div>
+    </div>
+  </div>
+  <div class="permission">
+    <b>Tip:</b>
+    Connect your headphones before pressing
+    <b>Start Camera</b>. Then hold
+    <b>HOLD TO TALK</b> to monitor your microphone.
+  </div>
+</div>
+<!-- RECORDINGS -->
+<div class="recordings">
+  <h2>📁 Your Recordings</h2>
+  <div id="recordingsList">
+    <div
+      id="emptyMessage"
+      class="empty">
+      No recordings yet.<br><br>
+      Press <b>Record</b> to make one.
+    </div>
+  </div>
+</div>
+</div>
+<script>
+/* =========================================
+   VARIABLES
+========================================= */
+let stream = null;
+let mediaRecorder = null;
+let chunks = [];
+let recordings = [];
+let recordingStartTime = null;
+let timerInterval = null;
+/* PUSH TO TALK */
+let audioContext = null;
+let microphoneSource = null;
+let monitorGain = null;
+let analyser = null;
+let monitorActive = false;
+let animationFrame = null;
+/* =========================================
+   ELEMENTS
+========================================= */
+const previewVideo =
+  document.getElementById(
+    "previewVideo"
+  );
+const cameraBtn =
+  document.getElementById(
+    "cameraBtn"
+  );
+const recordBtn =
+  document.getElementById(
+    "recordBtn"
+  );
+const stopBtn =
+  document.getElementById(
+    "stopBtn"
+  );
+const statusText =
+  document.getElementById(
+    "status"
+  );
+const recordingIndicator =
+  document.getElementById(
+    "recordingIndicator"
+  );
+const timer =
+  document.getElementById(
+    "timer"
+  );
+const recordingsList =
+  document.getElementById(
+    "recordingsList"
+  );
+const pttButton =
+  document.getElementById(
+    "pttButton"
+  );
+const meterFill =
+  document.getElementById(
+    "meterFill"
+  );
+/* =========================================
+   CAMERA
+========================================= */
+async function startCamera() {
+  if (!navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia) {
+    statusText.textContent =
+      "This browser does not support camera access.";
+    return;
+  }
+  try {
+    statusText.textContent =
+      "Requesting camera and microphone...";
+    stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: {
+            ideal: 1920
+          },
+          height: {
+            ideal: 1080
+          }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+    previewVideo.srcObject =
+      stream;
+    await previewVideo.play();
+    cameraBtn.textContent =
+      "🔄 Camera Ready";
+    cameraBtn.disabled =
+      false;
+    statusText.textContent =
+      "Camera ready — you can record or use Push-to-Talk.";
+  } catch (error) {
+    console.error(error);
+    statusText.textContent =
+      "Camera or microphone permission failed.";
+    alert(
+      "Camera/microphone access was not available.\n\n" +
+      "Allow Camera and Microphone access in your browser settings, " +
+      "then reload the page."
+    );
+  }
+}
+/* =========================================
+   MIME TYPE
+========================================= */
+function getSupportedMimeType() {
+  const types = [
+    "video/mp4",
+    "video/mp4;codecs=h264,aac",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm"
+  ];
+  for (const type of types) {
+    try {
+      if (
+        window.MediaRecorder &&
+        MediaRecorder.isTypeSupported(type)
+      ) {
+        return type;
+      }
+    } catch (e) {}
+  }
+  return "";
+}
+/* =========================================
+   START RECORDING
+========================================= */
+function startRecording() {
+  if (!stream) {
+    alert(
+      "Start the camera first."
+    );
+    return;
+  }
+  if (
+    !window.MediaRecorder
+  ) {
+    alert(
+      "This browser does not support video recording."
+    );
+    return;
+  }
+  chunks = [];
+  const mimeType =
+    getSupportedMimeType();
+  try {
+    if (mimeType) {
+      mediaRecorder =
+        new MediaRecorder(
+          stream,
+          {
+            mimeType: mimeType
+          }
+        );
+    } else {
+      mediaRecorder =
+        new MediaRecorder(stream);
+    }
+  } catch (error) {
+    console.error(error);
+    alert(
+      "Unable to start recording."
+    );
+    return;
+  }
+  mediaRecorder.ondataavailable =
+    function(event) {
+      if (
+        event.data &&
+        event.data.size > 0
+      ) {
+        chunks.push(
+          event.data
+        );
+      }
+    };
+  mediaRecorder.onstop =
+    function() {
+      const type =
+        mediaRecorder.mimeType ||
+        "video/webm";
+      const blob =
+        new Blob(
+          chunks,
+          {
+            type: type
+          }
+        );
+      createRecording(blob);
+    };
+  mediaRecorder.start(250);
+  recordingStartTime =
+    Date.now();
+  timerInterval =
+    setInterval(
+      updateTimer,
+      250
+    );
+  recordingIndicator.classList.add(
+    "active"
+  );
+  timer.classList.add(
+    "active"
+  );
+  recordBtn.disabled =
+    true;
+  stopBtn.disabled =
+    false;
+  cameraBtn.disabled =
+    true;
+  statusText.textContent =
+    "Recording...";
+}
+/* =========================================
+   STOP RECORDING
+========================================= */
+function stopRecording() {
+  if (!mediaRecorder) {
+    return;
+  }
+  if (
+    mediaRecorder.state ===
+    "recording"
+  ) {
+    mediaRecorder.stop();
+  }
+  clearInterval(
+    timerInterval
+  );
+  recordingIndicator.classList.remove(
+    "active"
+  );
+  timer.classList.remove(
+    "active"
+  );
+  recordBtn.disabled =
+    false;
+  stopBtn.disabled =
+    true;
+  cameraBtn.disabled =
+    false;
+  statusText.textContent =
+    "Processing recording...";
+}
+/* =========================================
+   TIMER
+========================================= */
+function updateTimer() {
+  if (!recordingStartTime) {
+    return;
+  }
+  const secondsElapsed =
+    Math.floor(
+      (Date.now() -
+       recordingStartTime) /
+      1000
+    );
+  const minutes =
+    Math.floor(
+      secondsElapsed / 60
+    );
+  const seconds =
+    secondsElapsed % 60;
+  timer.textContent =
+    String(minutes)
+      .padStart(2, "0") +
+    ":" +
+    String(seconds)
+      .padStart(2, "0");
+}
+/* =========================================
+   CREATE RECORDING
+========================================= */
+function createRecording(blob) {
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+  const recording = {
+    id: Date.now(),
+    blob: blob,
+    url: url,
+    created: new Date()
+  };
+  recordings.unshift(
+    recording
+  );
+  renderRecordings();
+  statusText.textContent =
+    "Recording finished!";
+}
+/* =========================================
+   RENDER RECORDINGS
+========================================= */
+function renderRecordings() {
+  recordingsList.innerHTML = "";
+  if (
+    recordings.length === 0
+  ) {
+    recordingsList.innerHTML =
+      `
+      <div class="empty">
+        No recordings yet.<br><br>
+        Press <b>Record</b> to make one.
+      </div>
+      `;
+    return;
+  }
+  recordings.forEach(
+    function(recording, index) {
+      const item =
+        document.createElement(
+          "div"
+        );
+      item.className =
+        "recording-item";
+      const video =
+        document.createElement(
+          "video"
+        );
+      video.src =
+        recording.url;
+      video.controls =
+        true;
+      video.playsInline =
+        true;
+      const info =
+        document.createElement(
+          "div"
+        );
+      info.className =
+        "recording-info";
+      const left =
+        document.createElement(
+          "div"
+        );
+      left.innerHTML =
+        `
+        <div class="recording-name">
+          Recording ${recordings.length - index}
+        </div>
+        <div class="recording-size">
+          ${formatBytes(recording.blob.size)}
+        </div>
+        `;
+      const right =
+        document.createElement(
+          "div"
+        );
+      right.innerHTML =
+        `
+        <div class="recording-time">
+          ${recording.created.toLocaleTimeString()}
+        </div>
+        `;
+      info.appendChild(left);
+      info.appendChild(right);
+      const buttons =
+        document.createElement(
+          "div"
+        );
+      buttons.className =
+        "recording-buttons";
+      const download =
+        document.createElement(
+          "button"
+        );
+      download.className =
+        "download";
+      download.textContent =
+        "⬇️ Save Video";
+      download.onclick =
+        function() {
+          downloadRecording(
+            recording
+          );
+        };
+      const deleteButton =
+        document.createElement(
+          "button"
+        );
+      deleteButton.className =
+        "delete";
+      deleteButton.textContent =
+        "🗑 Delete";
+      deleteButton.onclick =
+        function() {
+          deleteRecording(
+            recording.id
+          );
+        };
+      buttons.appendChild(
+        download
+      );
+      buttons.appendChild(
+        deleteButton
+      );
+      item.appendChild(
+        video
+      );
+      item.appendChild(
+        info
+      );
+      item.appendChild(
+        buttons
+      );
+      recordingsList.appendChild(
+        item
+      );
+    }
+  );
+}
+/* =========================================
+   DOWNLOAD
+========================================= */
+function downloadRecording(
+  recording
+) {
+  const extension =
+    recording.blob.type.includes(
+      "mp4"
+    )
+      ? "mp4"
+      : "webm";
+  const link =
+    document.createElement(
+      "a"
+    );
+  link.href =
+    recording.url;
+  link.download =
+    "recording-" +
+    recording.id +
+    "." +
+    extension;
+  document.body.appendChild(
+    link
+  );
+  link.click();
+  link.remove();
+}
+/* =========================================
+   DELETE
+========================================= */
+function deleteRecording(id) {
+  const recording =
+    recordings.find(
+      r => r.id === id
+    );
+  if (recording) {
+    URL.revokeObjectURL(
+      recording.url
+    );
+  }
+  recordings =
+    recordings.filter(
+      r => r.id !== id
+    );
+  renderRecordings();
+}
+/* =========================================
+   FILE SIZE
+========================================= */
+function formatBytes(
+  bytes
+) {
+  if (bytes === 0) {
+    return "0 Bytes";
+  }
+  const units = [
+    "Bytes",
+    "KB",
+    "MB",
+    "GB"
+  ];
+  const i =
+    Math.floor(
+      Math.log(bytes) /
+      Math.log(1024)
+    );
+  return (
+    parseFloat(
+      (
+        bytes /
+        Math.pow(
+          1024,
+          i
+        )
+      ).toFixed(2)
+    ) +
+    " " +
+    units[i]
+  );
+}
+/* =========================================
+   PUSH-TO-TALK AUDIO
+========================================= */
+async function startMonitor() {
+  if (!stream) {
+    alert(
+      "Start the camera first so the microphone permission is available."
+    );
+    return;
+  }
+  if (monitorActive) {
+    return;
+  }
+  try {
+    /*
+      Create an AudioContext.
+      The microphone stream is copied into
+      the audio graph and sent to the output.
+    */
+    if (!audioContext) {
+      audioContext =
+        new (
+          window.AudioContext ||
+          window.webkitAudioContext
+        )();
+    }
+    if (
+      audioContext.state ===
+      "suspended"
+    ) {
+      await audioContext.resume();
+    }
+    microphoneSource =
+      audioContext.createMediaStreamSource(
+        stream
+      );
+    monitorGain =
+      audioContext.createGain();
+    analyser =
+      audioContext.createAnalyser();
+    analyser.fftSize =
+      256;
+    /*
+      Lower this number if the microphone
+      is too loud.
+      1.0 = normal
+      0.5 = quieter
+    */
+    monitorGain.gain.value =
+      0.8;
+    microphoneSource.connect(
+      analyser
+    );
+    analyser.connect(
+      monitorGain
+    );
+    monitorGain.connect(
+      audioContext.destination
+    );
+    monitorActive =
+      true;
+    pttButton.classList.add(
+      "active"
+    );
+    pttButton.innerHTML =
+      `
+      <span class="ptt-icon">🔴</span>
+      LIVE — RELEASE TO STOP
+      `;
+    statusText.textContent =
+      "Push-to-Talk active — microphone is being monitored.";
+    updateAudioMeter();
+  } catch (error) {
+    console.error(error);
+    statusText.textContent =
+      "Unable to start microphone monitoring.";
+  }
+}
+function stopMonitor() {
+  if (!monitorActive) {
+    return;
+  }
+  monitorActive =
+    false;
+  if (microphoneSource) {
+    try {
+      microphoneSource.disconnect();
+    } catch (e) {}
+    microphoneSource =
+      null;
+  }
+  if (analyser) {
+    try {
+      analyser.disconnect();
+    } catch (e) {}
+    analyser =
+      null;
+  }
+  if (monitorGain) {
+    try {
+      monitorGain.disconnect();
+    } catch (e) {}
+    monitorGain =
+      null;
+  }
+  pttButton.classList.remove(
+    "active"
+  );
+  pttButton.innerHTML =
+    `
+    <span class="ptt-icon">🎙️</span>
+    HOLD TO TALK
+    `;
+  meterFill.style.width =
+    "0%";
+  statusText.textContent =
+    "Push-to-Talk stopped.";
+}
+/* =========================================
+   AUDIO METER
+========================================= */
+function updateAudioMeter() {
+  if (
+    !monitorActive ||
+    !analyser
+  ) {
+    return;
+  }
+  const data =
+    new Uint8Array(
+      analyser.frequencyBinCount
+    );
+  analyser.getByteTimeDomainData(
+    data
+  );
+  let total = 0;
+  for (
+    let i = 0;
+    i < data.length;
+    i++
+  ) {
+    const value =
+      (data[i] - 128) / 128;
+    total +=
+      value * value;
+  }
+  const rms =
+    Math.sqrt(
+      total / data.length
+    );
+  const level =
+    Math.min(
+      100,
+      rms * 500
+    );
+  meterFill.style.width =
+    level + "%";
+  animationFrame =
+    requestAnimationFrame(
+      updateAudioMeter
+    );
+}
+/* =========================================
+   PUSH-TO-TALK TOUCH
+========================================= */
+pttButton.addEventListener(
+  "pointerdown",
+  function(event) {
+    event.preventDefault();
+    startMonitor();
+  }
+);
+pttButton.addEventListener(
+  "pointerup",
+  function(event) {
+    event.preventDefault();
+    stopMonitor();
+  }
+);
+pttButton.addEventListener(
+  "pointercancel",
+  function() {
+    stopMonitor();
+  }
+);
+pttButton.addEventListener(
+  "pointerleave",
+  function(event) {
+    /*
+      Only stop when the user is actually
+      holding the button and their pointer
+      leaves it.
+    */
+    if (event.buttons) {
+      stopMonitor();
+    }
+  }
+);
+/* =========================================
+   BUTTONS
+========================================= */
+cameraBtn.addEventListener(
+  "click",
+  startCamera
+);
+recordBtn.addEventListener(
+  "click",
+  startRecording
+);
+stopBtn.addEventListener(
+  "click",
+  stopRecording
+);
+/* =========================================
+   CLEANUP
+========================================= */
+window.addEventListener(
+  "blur",
+  function() {
+    stopMonitor();
+  }
+);
+window.addEventListener(
+  "beforeunload",
+  function() {
+    stopMonitor();
+    if (stream) {
+      stream
+        .getTracks()
+        .forEach(
+          track => track.stop()
+        );
+    }
+    recordings.forEach(
+      recording => {
+        URL.revokeObjectURL(
+          recording.url
+        );
+      }
+    );
+  }
+);
+</script>
+</body>
+</html>
